@@ -1,0 +1,52 @@
+{
+	"name": "truth-guard",
+	"private": true,
+	"version": "1.1.0",
+	"type": "module",
+	"license": "MIT",
+	"author": "Rishab Alagharu",
+	"description": "TruthGuard is an AI-powered fake news detector that detects misinformation and bias to combat the spread of misinformation. TruthGuard empowers you to separate fact from fiction and protect the trustworthiness of the information you consume.",
+	"homepage": "https://truthguard.app",
+	"keywords": [
+		"fake news",
+		"AI",
+		"fake-news-detection",
+		"react",
+		"tailwindcss",
+		"tesseract",
+		"transformer",
+		"pytorch",
+		"congressional-app-challenge",
+		"congressional-app-challenge-2023",
+		"truthguard",
+		"rishab",
+		"rishab-alagharu"
+	],
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build && cp manifest.json dist/",
+		"lint": "eslint .",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"@tailwindcss/vite": "^4.1.11",
+		"axios": "^1.11.0",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"react-feather": "^2.0.10",
+		"react-toastify": "^11.0.5",
+		"tailwindcss": "^4.1.11",
+		"tesseract.js": "^6.0.1"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.30.1",
+		"@types/react": "^19.1.8",
+		"@types/react-dom": "^19.1.6",
+		"@vitejs/plugin-react": "^4.6.0",
+		"eslint": "^9.30.1",
+		"eslint-plugin-react-hooks": "^5.2.0",
+		"eslint-plugin-react-refresh": "^0.4.20",
+		"globals": "^16.3.0",
+		"vite": "^7.0.4"
+	}
+}

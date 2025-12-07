@@ -1,0 +1,30 @@
+{
+	"manifest_version": 3,
+	"name": "TruthGuard — AI Fake News Detector",
+	"short_name": "TruthGuard",
+	"description": "TruthGuard is an AI-powered fake news detector that detects misinformation, empowering you to separate fact from fiction.",
+	"lang": "en-US",
+	"start_url": "/",
+	"scope": "/",
+	"categories": [
+		"AI",
+		"fake news",
+		"LLM",
+		"Congressional App Challenge",
+		"rishab alagharu"
+	],
+	"icons": [
+		{
+			"src": "/192_TruthGuardIcon.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/512_TruthGuardIcon.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	],
+	"prefer_related_applications": false,
+	"related_applications": []
+}

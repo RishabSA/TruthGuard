@@ -1,0 +1,22 @@
+{
+	"manifest_version": 3,
+	"name": "TruthGuard — AI Fake News Detector",
+	"version": "1.1.2",
+	"description": "TruthGuard is an AI-powered fake news detector that detects misinformation, empowering you to separate fact from fiction.",
+	"icons": {
+		"16": "16_TruthGuardIcon.png",
+		"32": "32_TruthGuardIcon.png",
+		"48": "48_TruthGuardIcon.png",
+		"128": "128_TruthGuardIcon.png"
+	},
+	"action": {
+		"default_popup": "index.html",
+		"default_icon": {
+			"16": "16_TruthGuardIcon.png",
+			"32": "32_TruthGuardIcon.png",
+			"48": "48_TruthGuardIcon.png",
+			"128": "128_TruthGuardIcon.png"
+		},
+		"default_title": "TruthGuard — AI Fake News Detector"
+	}
+}
