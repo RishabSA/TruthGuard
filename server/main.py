@@ -1,6 +1,5 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import Response
 from pydantic import BaseModel, HttpUrl
 from typing import Optional
 import requests
