@@ -100,7 +100,8 @@ TruthGuard/
 │
 ├── server/                        # FastAPI backend
 │   ├── main.py                    #   API endpoints (/predict, /scrape)
-│   ├── requirements.txt           #   Python dependencies
+│   ├── pyproject.toml             #   Python project metadata & dependencies (uv)
+│   ├── uv.lock                    #   Locked dependency versions
 │   ├── Procfile                   #   Deployment configuration
 │   └── LICENSE
 │
@@ -134,10 +135,10 @@ cd TruthGuard
 cd server
 
 # Install dependencies
-pip install -r requirements.txt
+uv sync
 
 # Start the server
-uvicorn main:app --reload --port 8000
+uv run uvicorn main:app --reload --port 8000
 ```
 
 The API will be available at `http://localhost:8000`.
