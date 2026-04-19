@@ -1,19 +1,36 @@
 import { useEffect, useRef, useState } from "react";
 import {
-	ArrowRight,
+	Award,
+	FileText,
 	GitHub,
 	Globe,
 	Info,
+	Link,
 	Linkedin,
 	Monitor,
 	Moon,
+	RefreshCw,
+	Shield,
 	Sun,
 	UploadCloud,
 	X,
+	Zap,
 } from "react-feather";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Tesseract from "tesseract.js";
+
+const TABS = [
+	{ id: "TEXT", label: "Text", Icon: FileText },
+	{ id: "URL", label: "URL", Icon: Link },
+	{ id: "IMAGE", label: "Image", Icon: UploadCloud },
+];
+
+const THEME_OPTIONS = [
+	{ id: "Light", Icon: Sun },
+	{ id: "Dark", Icon: Moon },
+	{ id: "System", Icon: Monitor },
+];
 
 function App() {
 	const [theme, setTheme] = useState(() => {
@@ -32,7 +49,6 @@ function App() {
 
 	const serverURL = import.meta.env.VITE_SERVER_URL;
 
-	// Apply the theme whenever it changes
 	useEffect(() => {
 		const root = document.documentElement;
 
@@ -41,8 +57,6 @@ function App() {
 		} else if (theme === "Light") {
 			root.classList.remove("dark");
 		} else {
-			// System
-
 			if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
 				root.classList.add("dark");
 			} else {
@@ -67,6 +81,17 @@ function App() {
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [dropdownOpen]);
+
+	useEffect(() => {
+		function handleEsc(event) {
+			if (event.key === "Escape") {
+				setIsModalOpen(false);
+				setDropdownOpen(false);
+			}
+		}
+		document.addEventListener("keydown", handleEsc);
+		return () => document.removeEventListener("keydown", handleEsc);
+	}, []);
 
 	const handleImageUpload = event => {
 		const file = event.target.files[0];
@@ -164,21 +189,56 @@ function App() {
 		}
 	};
 
-	const probColor =
-		probability < 0.4
-			? "text-red-600 dark:text-red-500"
-			: probability < 0.7
-			? "text-yellow-400 dark:text-yellow-500"
-			: "text-green-500 dark:text-green-500";
+	const resetResult = () => {
+		setProbability(null);
+		setText("");
+		setUrl("");
+	};
+
+	const verdict =
+		probability === null
+			? null
+			: probability < 0.4
+				? {
+						label: "Likely Fake",
+						sub: "Low credibility signal",
+						tone: "red",
+						ring: "stroke-red-500",
+						text: "text-red-600 dark:text-red-400",
+						bg: "bg-red-50 dark:bg-red-950/40",
+						border: "border-red-200 dark:border-red-900",
+					}
+				: probability < 0.7
+					? {
+							label: "Uncertain",
+							sub: "Mixed credibility signal",
+							tone: "amber",
+							ring: "stroke-amber-400",
+							text: "text-amber-600 dark:text-amber-400",
+							bg: "bg-amber-50 dark:bg-amber-950/40",
+							border: "border-amber-200 dark:border-amber-900",
+						}
+					: {
+							label: "Likely Real",
+							sub: "Strong credibility signal",
+							tone: "emerald",
+							ring: "stroke-emerald-500",
+							text: "text-emerald-600 dark:text-emerald-400",
+							bg: "bg-emerald-50 dark:bg-emerald-950/40",
+							border: "border-emerald-200 dark:border-emerald-900",
+						};
+
+	const ActiveThemeIcon =
+		THEME_OPTIONS.find(t => t.id === theme)?.Icon || Monitor;
 
 	return (
-		<div className="h-screen bg-neutral-100 dark:bg-neutral-900 flex flex-col items-center">
+		<div className="relative min-h-dvh bg-neutral-50 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 overflow-x-hidden">
 			{loading && (
-				<div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50 transition-all ease-in-out duration-300">
+				<div className="fixed inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-50 transition-all ease-in-out duration-300">
 					<div role="status">
 						<svg
 							aria-hidden="true"
-							className="inline w-24 h-24 animate-spin text-neutral-300 fill-blue-600"
+							className="inline w-20 h-20 animate-spin text-neutral-300/30 fill-blue-500"
 							viewBox="0 0 100 101"
 							fill="none"
 							xmlns="http://www.w3.org/2000/svg">
@@ -193,24 +253,26 @@ function App() {
 						</svg>
 					</div>
 					{loadingType === "detect" && (
-						<div className="mt-5 flex flex-col items-center">
-							<span className="inline-block px-4 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-lg shadow">
-								Estimated Time: <span className="font-bold">10 seconds</span>
+						<div className="mt-6 flex flex-col items-center">
+							<span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 font-medium text-sm border border-blue-500/20">
+								<Zap size={14} />
+								Analyzing · ~30 seconds
 							</span>
 						</div>
 					)}
 					{loadingType === "extract" && imageLoadingStatus && (
-						<div className="w-1/4 flex flex-col items-center">
-							<div className="w-full mt-10 mb-5 bg-neutral-300 rounded-full h-2.5">
+						<div className="w-72 md:w-96 flex flex-col items-center mt-8">
+							<div className="w-full bg-neutral-700/40 rounded-full h-1.5 overflow-hidden">
 								<div
-									className="bg-blue-600 h-2.5 rounded-full"
+									className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all duration-200"
 									style={{
 										width: `${imageLoadingStatus.progress * 100}%`,
-									}}></div>
+									}}
+								/>
 							</div>
-							<span className="inline-block px-4 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-lg shadow">
+							<span className="mt-4 inline-block px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-300 font-medium text-sm border border-blue-500/20">
 								{imageLoadingStatus.status.replace(/\b\w/g, c =>
-									c.toUpperCase()
+									c.toUpperCase(),
 								)}
 							</span>
 						</div>
@@ -220,131 +282,95 @@ function App() {
 
 			<div
 				tabIndex="-1"
-				aria-hidden="true"
+				aria-hidden={!isModalOpen}
 				onClick={() => setIsModalOpen(false)}
-				className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
+				className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${
 					isModalOpen
-						? "bg-black/50 pointer-events-auto opacity-100"
+						? "bg-black/60 backdrop-blur-sm pointer-events-auto opacity-100"
 						: "bg-black/0 pointer-events-none opacity-0"
 				}`}>
 				<div
 					onClick={e => e.stopPropagation()}
-					className={`relative p-4 w-full max-w-xs md:max-w-2xl max-h-full bg-white rounded-lg shadow-sm dark:bg-neutral-800 transform transition-transform duration-300 ${
+					role="dialog"
+					aria-modal="true"
+					className={`relative w-full max-w-xl bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 transform transition-all duration-300 ${
 						isModalOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
 					}`}>
-					<div className="relative bg-white rounded-lg shadow-sm dark:bg-neutral-800">
-						<div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-neutral-600 border-neutral-200">
-							<h3 className="flex items-center text-xl font-semibold text-neutral-900 dark:text-white">
-								<Info
-									size={24}
-									strokeWidth={2}
-									className="stroke-current text-neutral-500 dark:text-neutral-300 mr-4"
-								/>
-								Info
-							</h3>
-							<button
-								type="button"
-								className="cursor-pointer text-neutral-400 bg-transparent hover:bg-neutral-200 hover:text-neutral-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-neutral-600 dark:hover:text-white"
-								onClick={() => setIsModalOpen(false)}>
-								<X
-									size={24}
-									strokeWidth={2}
-									className="stroke-current text-neutral-500 dark:text-neutral-400"
-								/>
-							</button>
+					<div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
+						<div className="flex items-center gap-3">
+							<div className="h-9 w-9 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+								<Info size={18} className="text-blue-600 dark:text-blue-400" />
+							</div>
+							<h3 className="text-lg font-semibold">About TruthGuard</h3>
 						</div>
-						<div className="p-4 md:p-5 space-y-4">
-							<p className="text-base leading-relaxed text-neutral-500 dark:text-neutral-400">
-								TruthGuard is an AI-powered fake news detector that detects
-								misinformation and bias to combat the spread of misinformation.
-								TruthGuard empowers you to separate fact from fiction and
-								protect the trustworthiness of the information you consume.
-							</p>
-							<p className="text-base leading-relaxed text-neutral-500 dark:text-neutral-400">
-								Hi! My name is Rishab Alagharu, and I am the creator of
-								TruthGuard. TruthGuard is a winner of the 2023 Congressional App
-								Challenge! I built the TruthGuard AI model using PyTorch and the
-								frontend using React JS and Tailwind CSS. The model architecture
-								consists of a Transformer Encoder with a classification head.
-							</p>
-							<p className="text-base leading-relaxed text-neutral-500 dark:text-neutral-400">
-								See my personal links below to learn more about me and my work
-								or get in contact with me!
-							</p>
-							<ul className="space-y-4 mb-4">
-								<li>
-									<label
-										onClick={() =>
-											window.open(
-												"https://www.linkedin.com/in/rishab-alagharu",
-												"_blank"
-											)
-										}
-										className="transition-all inline-flex items-center justify-between w-full px-4 py-2 text-neutral-900 bg-white border border-neutral-200 rounded-lg cursor-pointer dark:hover:text-neutral-300 dark:border-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-white dark:bg-neutral-800 dark:hover:bg-neutral-700">
-										<div className="flex items-center space-x-4">
-											<Linkedin
-												size={24}
-												className="stroke-current text-blue-700 dark:text-blue-500"
-											/>
-											<div className="w-full text-lg font-semibold">
-												LinkedIn
-											</div>
-										</div>
-										<ArrowRight
-											size={20}
-											strokeWidth={3}
-											className="stroke-current text-neutral-500 dark:text-neutral-400"
-										/>
-									</label>
-								</li>
-								<li>
-									<label
-										onClick={() =>
-											window.open("https://rishabalagharu.com/", "_blank")
-										}
-										className="transition-all inline-flex items-center justify-between w-full px-4 py-2 text-neutral-900 bg-white border border-neutral-200 rounded-lg cursor-pointer dark:hover:text-neutral-300 dark:border-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-white dark:bg-neutral-800 dark:hover:bg-neutral-700">
-										<div className="flex items-center space-x-4">
-											<Globe
-												size={24}
-												className="stroke-current text-green-500 dark:text-green-400"
-											/>
-											<div className="w-full text-lg font-semibold">
-												Personal Website
-											</div>
-										</div>
-										<ArrowRight
-											size={20}
-											strokeWidth={3}
-											className="stroke-current text-neutral-500 dark:text-neutral-400"
-										/>
-									</label>
-								</li>
-								<li>
-									<label
-										onClick={() =>
-											window.open("https://github.com/RishabSA", "_blank")
-										}
-										className="transition-all inline-flex items-center justify-between w-full px-4 py-2 text-neutral-900 bg-white border border-neutral-200 rounded-lg cursor-pointer dark:hover:text-neutral-300 dark:border-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-white dark:bg-neutral-800 dark:hover:bg-neutral-700">
-										<div className="flex items-center space-x-4">
-											<GitHub
-												size={24}
-												className="stroke-current text-neutral-800 dark:text-neutral-300"
-											/>
-
-											<div className="w-full text-lg font-semibold">Github</div>
-										</div>
-										<ArrowRight
-											size={20}
-											strokeWidth={3}
-											className="stroke-current text-neutral-500 dark:text-neutral-400"
-										/>
-									</label>
-								</li>
-							</ul>
-						</div>
+						<button
+							type="button"
+							aria-label="Close"
+							className="cursor-pointer h-9 w-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+							onClick={() => setIsModalOpen(false)}>
+							<X size={18} />
+						</button>
+					</div>
+					<div className="px-6 py-5 space-y-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+						<p>
+							TruthGuard is an AI-powered fake news detector that identifies
+							misinformation and bias to combat the spread of false information
+							— empowering you to separate fact from fiction.
+						</p>
+						<p>
+							Built by Rishab Alagharu, TruthGuard won the 2023 Congressional
+							App Challenge. The model is a Transformer Encoder with a
+							classification head, trained in PyTorch and served via ONNX
+							Runtime.
+						</p>
+					</div>
+					<div className="px-6 pb-6 space-y-2">
+						<a
+							href="https://www.linkedin.com/in/rishab-alagharu"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="group flex items-center justify-between w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer">
+							<div className="flex items-center gap-3">
+								<Linkedin
+									size={20}
+									className="text-blue-600 dark:text-blue-400"
+								/>
+								<span className="font-medium">LinkedIn</span>
+							</div>
+							<ArrowRightArrow />
+						</a>
+						<a
+							href="https://rishabalagharu.com/"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="group flex items-center justify-between w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all cursor-pointer">
+							<div className="flex items-center gap-3">
+								<Globe
+									size={20}
+									className="text-emerald-600 dark:text-emerald-400"
+								/>
+								<span className="font-medium">Personal Website</span>
+							</div>
+							<ArrowRightArrow />
+						</a>
+						<a
+							href="https://github.com/RishabSA"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="group flex items-center justify-between w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-all cursor-pointer">
+							<div className="flex items-center gap-3">
+								<GitHub
+									size={20}
+									className="text-neutral-800 dark:text-neutral-200"
+								/>
+								<span className="font-medium">GitHub</span>
+							</div>
+							<ArrowRightArrow />
+						</a>
 					</div>
 				</div>
 			</div>
+
 			<ToastContainer
 				position="top-right"
 				autoClose={5000}
@@ -358,238 +384,351 @@ function App() {
 				theme="colored"
 				transition={Bounce}
 			/>
-			<div className="mt-[2vh] md:flex md:space-x-20 items-center justify-center">
-				<div className="flex items-center space-x-4 justify-center">
-					<img
-						src="/TruthGuardIcon.svg"
-						alt="TruthGuard Icon"
-						className="h-20 w-auto"
-					/>
-					<h1 className="text-5xl text-black dark:text-white">TruthGuard</h1>
-				</div>
 
-				<div className="flex items-center space-x-4 mt-5 md:mt-0 justify-center">
-					<div>
+			<div className="relative max-w-6xl mx-auto px-4 md:px-8 pt-6 pb-16">
+				<header className="flex items-center justify-between">
+					<div className="flex items-center gap-3">
+						<img
+							src="/TruthGuardIcon.svg"
+							alt="TruthGuard"
+							className="h-11 w-auto"
+						/>
+						<div className="flex flex-col">
+							<h1 className="text-2xl md:text-3xl font-bold tracking-tight flex">
+								TruthGuard
+							</h1>
+							<span className="hidden md:inline text-xs text-neutral-500 dark:text-neutral-400">
+								AI-powered misinformation detection
+							</span>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-2">
 						<div ref={dropdownRef} className="relative">
 							<button
 								onClick={() => setDropdownOpen(o => !o)}
-								className="cursor-pointer text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-900 border-2 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-200 dark:hover:bg-neutral-800 font-medium rounded-lg text-sm px-5 py-2.5 inline-flex items-center">
-								{theme === "Light" && <Sun size={16} className="mr-2" />}
-								{theme === "Dark" && <Moon size={16} className="mr-2" />}
-								{theme === "System" && <Monitor size={16} className="mr-2" />}
-								<span>{theme}</span>
+								aria-haspopup="menu"
+								aria-expanded={dropdownOpen}
+								className="cursor-pointer h-10 px-3 inline-flex items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 backdrop-blur hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+								<ActiveThemeIcon size={16} />
+								<span className="hidden sm:inline">{theme}</span>
 							</button>
 							{dropdownOpen && (
-								<div className="transition-all duration-300 ease-in-out absolute z-10 bg-white dark:bg-neutral-800 rounded-lg">
-									<ul className="py-2 text-sm text-neutral-600 dark:text-neutral-400">
-										<li>
-											<button
-												onClick={() => {
-													setTheme("Light");
-													setDropdownOpen(false);
-												}}
-												className="cursor-pointer w-full px-4 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 flex items-center">
-												<Sun size={16} className="mr-2" />
-												Light
-											</button>
-										</li>
-										<li>
-											<button
-												onClick={() => {
-													setTheme("Dark");
-													setDropdownOpen(false);
-												}}
-												className="cursor-pointer w-full px-4 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 flex items-center">
-												<Moon size={16} className="mr-2" />
-												Dark
-											</button>
-										</li>
-										<li>
-											<button
-												onClick={() => {
-													setTheme("System");
-													setDropdownOpen(false);
-												}}
-												className="cursor-pointer w-full px-4 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 flex items-center">
-												<Monitor size={16} className="mr-2" />
-												System
-											</button>
-										</li>
-									</ul>
+								<div
+									role="menu"
+									className="absolute right-0 mt-2 w-36 z-20 bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-lg overflow-hidden">
+									{THEME_OPTIONS.map(({ id, Icon }) => (
+										<button
+											key={id}
+											onClick={() => {
+												setTheme(id);
+												setDropdownOpen(false);
+											}}
+											className={`cursor-pointer w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 transition-colors ${
+												theme === id
+													? "text-blue-600 dark:text-blue-400 font-medium"
+													: "text-neutral-700 dark:text-neutral-300"
+											}`}>
+											<Icon size={16} />
+											{id}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
+
+						<button
+							type="button"
+							aria-label="About TruthGuard"
+							title="About"
+							className="cursor-pointer h-10 w-10 flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 backdrop-blur hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+							onClick={() => setIsModalOpen(true)}>
+							<Info size={18} />
+						</button>
+					</div>
+				</header>
+
+				<section className="mt-8 md:mt-12 flex flex-col items-center text-center">
+					<h2 className="text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
+						Separate{" "}
+						<span className="text-blue-600 dark:text-blue-500 bg-clip-text">
+							fact from fiction
+						</span>
+					</h2>
+					<a
+						href="https://www.congressionalappchallenge.us/23-ga05/"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 dark:bg-green-500/20 border border-green-500/20 text-green-700 dark:text-green-300 text-sm font-semibold hover:bg-green-500/15 transition-colors cursor-pointer">
+						<Award size={14} />
+						2023 Congressional App Challenge Winner
+					</a>
+				</section>
+
+				<div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
+					<div className="lg:col-span-3">
+						<div className="rounded-2xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur border border-neutral-200 dark:border-neutral-800 shadow-sm p-5 md:p-6">
+							<p className="mb-4 text-sm md:text-base text-neutral-600 dark:text-neutral-400 max-w-xl">
+								Paste an article, add a URL, or upload a screenshot.
+							</p>
+							<div className="inline-flex p-1 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-800">
+								{TABS.map(({ id, label, Icon }) => {
+									const active = selectedItem === id;
+									return (
+										<button
+											key={id}
+											onClick={() => setSelectedItem(id)}
+											className={`cursor-pointer inline-flex items-center gap-2 px-3 md:px-4 py-2 text-sm font-medium rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+												active
+													? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+													: "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
+											}`}
+											aria-pressed={active}>
+											<Icon size={16} />
+											{label}
+										</button>
+									);
+								})}
+							</div>
+
+							<div className="mt-5">
+								{selectedItem === "TEXT" && (
+									<div>
+										<label
+											htmlFor="text-input"
+											className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+											Article text
+										</label>
+										<textarea
+											id="text-input"
+											placeholder="Paste a news article here..."
+											value={text}
+											onChange={event => setText(event.target.value)}
+											className="transition-all text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 w-full resize-none h-48 bg-neutral-50 dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent selection:bg-blue-200 dark:selection:bg-blue-700/60"
+										/>
+										<div className="mt-1.5 flex justify-between text-xs text-neutral-500">
+											<span>
+												Longer passages are more likely to produce reliable
+												scores
+											</span>
+											<span>{text.length.toLocaleString()} chars</span>
+										</div>
+									</div>
+								)}
+
+								{selectedItem === "URL" && (
+									<div>
+										<label
+											htmlFor="url-input"
+											className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+											Article URL
+										</label>
+										<div className="relative">
+											<Link
+												size={16}
+												className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+											/>
+											<input
+												id="url-input"
+												type="url"
+												placeholder="https://example.com/news/article"
+												value={url}
+												onChange={event => setUrl(event.target.value)}
+												className="transition-all text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 border border-neutral-200 dark:border-neutral-800 rounded-xl pl-10 pr-4 py-3 w-full bg-neutral-50 dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+											/>
+										</div>
+										<p className="mt-1.5 text-xs text-neutral-500">
+											The article text will automatically be fetched.
+										</p>
+									</div>
+								)}
+
+								{selectedItem === "IMAGE" && (
+									<div>
+										<label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+											Screenshot
+										</label>
+										<label
+											htmlFor="image-dropzone"
+											className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl bg-neutral-50 dark:bg-neutral-900 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 hover:border-blue-400 dark:hover:border-blue-600 transition-colors ${
+												loading
+													? "opacity-50 cursor-not-allowed"
+													: "cursor-pointer"
+											}`}>
+											<div className="flex items-center gap-3">
+												<div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+													<UploadCloud
+														size={20}
+														className="text-blue-600 dark:text-blue-400"
+													/>
+												</div>
+												<div className="text-left">
+													<p className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+														Click to upload or drag and drop
+													</p>
+													<p className="text-xs text-neutral-500 dark:text-neutral-400">
+														PNG, JPG, or JPEG
+													</p>
+												</div>
+											</div>
+											<input
+												id="image-dropzone"
+												type="file"
+												accept=".png, .jpg, .jpeg"
+												className="hidden"
+												multiple={false}
+												disabled={loading}
+												onChange={handleImageUpload}
+											/>
+										</label>
+
+										<textarea
+											placeholder="Text extracted from the image will appear here..."
+											value={text}
+											onChange={event => setText(event.target.value)}
+											className="mt-3 transition-all text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 w-full resize-none h-32 bg-neutral-50 dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+										/>
+									</div>
+								)}
+							</div>
+
+							<button
+								type="button"
+								onClick={detect}
+								disabled={isDetectDisabled}
+								className={`mt-5 w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-white font-semibold text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 ${
+									isDetectDisabled
+										? "bg-neutral-300 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-500 cursor-not-allowed"
+										: "bg-blue-600 hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-lg cursor-pointer active:scale-[0.99] motion-reduce:active:scale-100"
+								}`}>
+								<Shield size={18} />
+								Detect
+							</button>
+
+							<p className="mt-3 text-xs text-center text-neutral-500 dark:text-neutral-400">
+								⚠️ TruthGuard is an AI tool. Always verify information from
+								multiple sources.
+							</p>
+						</div>
+					</div>
+
+					<div className="lg:col-span-2">
+						<div className="h-full rounded-2xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur border border-neutral-200 dark:border-neutral-800 shadow-sm p-5 md:p-6 flex flex-col">
+							<div className="flex items-center justify-between">
+								<h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide">
+									Result
+								</h3>
+								{probability !== null && (
+									<button
+										type="button"
+										onClick={resetResult}
+										className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors">
+										<RefreshCw size={12} />
+										Reset
+									</button>
+								)}
+							</div>
+
+							{probability === null ? (
+								<div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+									<div className="h-14 w-14 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+										<Shield
+											size={22}
+											className="text-neutral-400 dark:text-neutral-500"
+										/>
+									</div>
+									<p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
+										Submit content to receive a credibility score
+									</p>
+									<p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
+										Scored on a 0 - 100 credibility scale
+									</p>
+								</div>
+							) : (
+								<div className="flex-1 flex flex-col items-center justify-center py-6">
+									<div className="relative size-48">
+										<svg
+											className="rotate-[135deg] size-full"
+											viewBox="0 0 36 36"
+											xmlns="http://www.w3.org/2000/svg">
+											<circle
+												cx="18"
+												cy="18"
+												r="16"
+												fill="none"
+												className="stroke-neutral-200 dark:stroke-neutral-800"
+												strokeWidth="2"
+												strokeDasharray="75 100"
+												strokeLinecap="round"
+											/>
+											<circle
+												cx="18"
+												cy="18"
+												r="16"
+												fill="none"
+												className={`${verdict.ring} transition-all duration-700 ease-out`}
+												strokeWidth="2.5"
+												strokeDasharray={`${probability * 100 * 0.75} 100`}
+												strokeLinecap="round"
+											/>
+										</svg>
+										<div className="absolute top-1/2 start-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+											<span
+												className={`text-4xl font-bold tabular-nums ${verdict.text}`}>
+												{Math.round(probability * 100)}
+												<span className="text-2xl">%</span>
+											</span>
+											<span className="block text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+												credibility
+											</span>
+										</div>
+									</div>
+
+									<div
+										className={`mt-4 inline-flex flex-col items-center px-4 py-2 rounded-xl border ${verdict.bg} ${verdict.border}`}>
+										<span className={`text-sm font-semibold ${verdict.text}`}>
+											{verdict.label}
+										</span>
+										<span className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+											{verdict.sub}
+										</span>
+									</div>
 								</div>
 							)}
 						</div>
 					</div>
-					<button
-						type="button"
-						aria-label="Open information panel"
-						title="Info"
-						className="cursor-pointer h-10 w-10 text-neutral-500 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-900 border-2 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-200 dark:hover:bg-neutral-800 flex items-center justify-center rounded-lg transition-colors"
-						onClick={() => setIsModalOpen(true)}>
-						<div className="flex items-center">
-							<Info
-								size={24}
-								strokeWidth={2}
-								className="stroke-current text-neutral-500 dark:text-neutral-300"
-							/>
-						</div>
-					</button>
 				</div>
+
+				<footer className="mt-12 text-center text-xs text-neutral-500 dark:text-neutral-500">
+					Built by{" "}
+					<a
+						href="https://rishabalagharu.com/"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="underline decoration-dotted underline-offset-4 hover:text-neutral-800 dark:hover:text-neutral-300 transition-colors">
+						Rishab Alagharu
+					</a>
+				</footer>
 			</div>
-			<div className="pb-8 mt-5 w-full md:w-1/2 flex flex-col justify-start items-center border-neutral-200 dark:border-neutral-800 border-2 rounded-xl">
-				<div className="flex justify-center w-2/3 mb-5">
-					<button
-						onClick={() => setSelectedItem("TEXT")}
-						className={`cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all text-neutral-700 dark:text-neutral-300 w-1/3 text-xl border-b-2 p-2 pt-4 ${
-							selectedItem === "TEXT"
-								? "border-b-neutral-500 dark:border-b-neutral-300 font-bold"
-								: "border-b-neutral-200 dark:border-b-neutral-700 opacity-75"
-						}`}>
-						Text
-					</button>
-					<button
-						onClick={() => setSelectedItem("URL")}
-						className={`cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all text-neutral-700 dark:text-neutral-300 w-1/3 text-xl border-b-2 p-2 pt-4 ${
-							selectedItem === "URL"
-								? "border-b-neutral-500 dark:border-b-neutral-300 font-bold"
-								: "border-b-neutral-200 dark:border-b-neutral-700 opacity-75"
-						}`}>
-						URL
-					</button>
-					<button
-						onClick={() => setSelectedItem("IMAGE")}
-						className={`cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all text-neutral-700 dark:text-neutral-300 w-1/3 text-xl border-b-2 p-2 pt-4 ${
-							selectedItem === "IMAGE"
-								? "border-b-neutral-500 dark:border-b-neutral-300 font-bold"
-								: "border-b-neutral-200 dark:border-b-neutral-700 opacity-75"
-						}`}>
-						Image
-					</button>
-				</div>
-				<div className="flex justify-center w-11/12 md:w-2/3">
-					{selectedItem === "TEXT" ? (
-						<textarea
-							placeholder="Paste a news article here..."
-							value={text}
-							onChange={event => setText(event.target.value)}
-							className="transition-all text-black dark:text-white placeholder-neutral-500 border-neutral-300 dark:border-neutral-700 border-2 rounded-xl px-4 py-3 w-full resize-none h-[150px] bg-neutral-100 dark:bg-neutral-900 selection:bg-blue-200 dark:selection:bg-blue-700"
-						/>
-					) : selectedItem === "URL" ? (
-						<input
-							placeholder="Paste a news article url here..."
-							value={url}
-							onChange={event => setUrl(event.target.value)}
-							className="transition-all text-black dark:text-white border-neutral-300 dark:border-neutral-700 border-2 rounded-xl p-5 w-full resize-none h-12 bg-neutral-100 dark:bg-neutral-900 selection:bg-blue-200 dark:selection:bg-blue-700"
-						/>
-					) : (
-						<div className="flex flex-col items-center w-full">
-							<div
-								className={`flex items-center justify-center w-full mb-2 ${
-									loading && "opacity-50 cursor-not-allowed"
-								}`}>
-								<label
-									htmlFor="image-dropzone"
-									className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer">
-									<div className="flex flex-col items-center justify-center space-y-2">
-										<div className="flex items-center justify-center">
-											<UploadCloud
-												size={24}
-												strokeWidth={2}
-												className="stroke-current text-neutral-500 dark:text-neutral-400"
-											/>
-											<div className="text-center ml-4">
-												<p className="text-sm text-neutral-600 dark:text-neutral-300">
-													Click to upload or drag and drop
-												</p>
-												<p className="text-xs text-neutral-500 dark:text-neutral-400">
-													PNG, JPG, or JPEG
-												</p>
-											</div>
-										</div>
-									</div>
-									<input
-										id="image-dropzone"
-										type="file"
-										accept=".png, .jpg, .jpeg"
-										className="hidden"
-										multiple={false}
-										disabled={loading}
-										onChange={handleImageUpload}
-									/>
-								</label>
-							</div>
-
-							<textarea
-								placeholder="Text in the image will appear here..."
-								value={text}
-								onChange={event => setText(event.target.value)}
-								className="transition-all text-black dark:text-white placeholder-neutral-500 border-neutral-300 dark:border-neutral-700 border-2 rounded-xl px-4 py-3 w-full resize-none h-[150px] bg-neutral-100 dark:bg-neutral-900 selection:bg-blue-200 dark:selection:bg-blue-700"
-							/>
-						</div>
-					)}
-				</div>
-				<div className="flex justify-center w-11/12 md:w-2/3">
-					<button
-						className={`
-							border-neutral-300 dark:border-neutral-700 border-2 rounded-xl p-2 w-full
-							bg-neutral-100 dark:bg-neutral-900 mt-2 text-xl font-semibold
-							text-neutral-600 dark:text-neutral-300 transition-transform transform
-							${
-								isDetectDisabled
-									? "opacity-50 cursor-not-allowed"
-									: "cursor-pointer hover:scale-105 hover:bg-neutral-200 dark:hover:bg-neutral-800"
-							}
-						`}
-						onClick={detect}
-						disabled={isDetectDisabled}>
-						DETECT
-					</button>
-				</div>
-				<div className="flex justify-center w-11/12 md:w-2/3 mt-2">
-					<div className="w-full mt-2 text-yellow-500 dark:text-yellow-300 text-center text-xs">
-						⚠️ TruthGuard is an AI tool. Always verify information from multiple
-						sources.
-					</div>
-				</div>
-			</div>
-			{probability !== null && (
-				<div className="relative size-52 mt-5">
-					<svg
-						className="rotate-[135deg] size-full"
-						viewBox="0 0 36 36"
-						xmlns="http://www.w3.org/2000/svg">
-						<circle
-							cx="18"
-							cy="18"
-							r="16"
-							fill="none"
-							className="stroke-current text-neutral-300 dark:text-neutral-700"
-							strokeWidth="1"
-							strokeDasharray="75 100"
-							strokeLinecap="round"></circle>
-
-						<circle
-							cx="18"
-							cy="18"
-							r="16"
-							fill="none"
-							className={`stroke-current ${probColor}`}
-							strokeWidth="2"
-							strokeDasharray={`${probability * 100 * 0.75} 100`}
-							strokeLinecap="round"></circle>
-					</svg>
-
-					<div className="absolute top-1/2 start-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-						<span className={`text-4xl font-bold ${probColor}`}>
-							{Math.round(probability * 100)}%
-						</span>
-						<span className={`text-xl ${probColor} block`}>
-							{probability > 0.5 ? "Real" : "Fake"}
-						</span>
-					</div>
-				</div>
-			)}
 		</div>
+	);
+}
+
+function ArrowRightArrow() {
+	return (
+		<svg
+			width="16"
+			height="16"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2.5"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className="text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200 group-hover:translate-x-0.5 transition-all">
+			<line x1="5" y1="12" x2="19" y2="12" />
+			<polyline points="12 5 19 12 12 19" />
+		</svg>
 	);
 }
 

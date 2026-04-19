@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "TruthGuard — AI Fake News Detector",
+	"name": "TruthGuard — AI-powered Misinformation Detection",
 	"short_name": "TruthGuard",
 	"description": "TruthGuard is an AI-powered fake news detector that detects misinformation, empowering you to separate fact from fiction.",
 	"lang": "en-US",

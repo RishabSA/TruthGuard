@@ -1,10 +1,10 @@
-# TruthGuard
+# TruthGuard - AI-powered Misinformation Detection
 
 **Winner of the 2023 Congressional App Challenge**
 
-> AI-powered fake news detector that detects misinformation and bias to combat the spread of misinformation. TruthGuard empowers you to separate fact from fiction and protect the trustworthiness of the information you consume.
+> AI-powered misinformation and fake news detection. TruthGuard empowers you to separate fact from fiction and protect the trustworthiness of the information you consume.
 
-![TruthGuard Demo](resources/TruthGuardQuickDemo.gif)
+![TruthGuard Demo](resources/TruthGuardDemo.gif)
 
 [Try TruthGuard](https://truthguard.app/) | [Congressional App Challenge Winner](https://www.congressionalappchallenge.us/23-ga05/)
 
