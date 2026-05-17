@@ -16,36 +16,67 @@ import {
 	X,
 	Zap,
 } from "react-feather";
+import type { Icon } from "react-feather";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Tesseract from "tesseract.js";
 
-const TABS = [
+type TabId = "TEXT" | "URL" | "IMAGE";
+type ThemeId = "Light" | "Dark" | "System";
+type LoadingType = "detect" | "extract";
+
+interface Tab {
+	id: TabId;
+	label: string;
+	Icon: Icon;
+}
+
+interface ThemeOption {
+	id: ThemeId;
+	Icon: Icon;
+}
+
+interface Verdict {
+	label: string;
+	sub: string;
+	ring: string;
+	text: string;
+	bg: string;
+	border: string;
+}
+
+interface ImageLoadingStatus {
+	status: string;
+	progress: number;
+}
+
+const TABS: Tab[] = [
 	{ id: "TEXT", label: "Text", Icon: FileText },
 	{ id: "URL", label: "URL", Icon: Link },
 	{ id: "IMAGE", label: "Image", Icon: UploadCloud },
 ];
 
-const THEME_OPTIONS = [
+const THEME_OPTIONS: ThemeOption[] = [
 	{ id: "Light", Icon: Sun },
 	{ id: "Dark", Icon: Moon },
 	{ id: "System", Icon: Monitor },
 ];
 
 function App() {
-	const [theme, setTheme] = useState(() => {
-		return localStorage.getItem("theme") || "System";
+	const [theme, setTheme] = useState<ThemeId>(() => {
+		return (localStorage.getItem("theme") as ThemeId) || "System";
 	});
-	const [dropdownOpen, setDropdownOpen] = useState(false);
-	const [url, setUrl] = useState("");
-	const [text, setText] = useState("");
-	const [selectedItem, setSelectedItem] = useState("TEXT");
-	const [probability, setProbability] = useState(null);
-	const [loading, setLoading] = useState(false);
-	const [loadingType, setLoadingType] = useState(null);
-	const [imageLoadingStatus, setImageLoadingStatus] = useState(null);
-	const [isModalOpen, setIsModalOpen] = useState(false);
-	const dropdownRef = useRef(null);
+	const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+	const [url, setUrl] = useState<string>("");
+	const [text, setText] = useState<string>("");
+	const [selectedItem, setSelectedItem] = useState<TabId>("TEXT");
+	const [probability, setProbability] = useState<number | null>(null);
+	const [loading, setLoading] = useState<boolean>(false);
+	const [loadingType, setLoadingType] = useState<LoadingType | null>(null);
+	const [imageLoadingStatus, setImageLoadingStatus] =
+		useState<ImageLoadingStatus | null>(null);
+	const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+	const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 	const serverURL = import.meta.env.VITE_SERVER_URL;
 
@@ -68,11 +99,11 @@ function App() {
 	}, [theme]);
 
 	useEffect(() => {
-		function handleClickOutside(event) {
+		function handleClickOutside(event: MouseEvent): void {
 			if (
 				dropdownOpen &&
 				dropdownRef.current &&
-				!dropdownRef.current.contains(event.target)
+				!dropdownRef.current.contains(event.target as Node)
 			) {
 				setDropdownOpen(false);
 			}
@@ -83,7 +114,7 @@ function App() {
 	}, [dropdownOpen]);
 
 	useEffect(() => {
-		function handleEsc(event) {
+		function handleEsc(event: KeyboardEvent): void {
 			if (event.key === "Escape") {
 				setIsModalOpen(false);
 				setDropdownOpen(false);
@@ -93,8 +124,10 @@ function App() {
 		return () => document.removeEventListener("keydown", handleEsc);
 	}, []);
 
-	const handleImageUpload = event => {
-		const file = event.target.files[0];
+	const handleImageUpload = (
+		event: React.ChangeEvent<HTMLInputElement>,
+	): void => {
+		const file = event.target.files?.[0];
 
 		if (file) {
 			const fileUrl = URL.createObjectURL(file);
@@ -102,7 +135,7 @@ function App() {
 		}
 	};
 
-	const handleExtractImageText = async imageUrl => {
+	const handleExtractImageText = async (imageUrl: string): Promise<void> => {
 		setText("");
 		setLoading(true);
 		setLoadingType("extract");
@@ -111,7 +144,7 @@ function App() {
 			const {
 				data: { text: extractedText },
 			} = await Tesseract.recognize(imageUrl, "eng", {
-				logger: info => {
+				logger: (info: { status: string; progress: number }) => {
 					if (info) {
 						setImageLoadingStatus({
 							status: info.status,
@@ -132,21 +165,21 @@ function App() {
 		}
 	};
 
-	const isDetectDisabled =
+	const isDetectDisabled: boolean =
 		(["TEXT", "IMAGE"].includes(selectedItem) && !text.trim()) ||
 		(selectedItem === "URL" && !url.trim());
 
-	const getUrlText = async url => {
+	const getUrlText = async (articleUrl: string): Promise<string> => {
 		try {
 			const res = await fetch(`${serverURL}/scrape`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ url }),
+				body: JSON.stringify({ url: articleUrl }),
 			});
 
 			if (!res.ok) throw new Error(await res.text());
-			const { text } = await res.json();
-			return text;
+			const { text: scraped } = (await res.json()) as { text: string };
+			return scraped;
 		} catch (e) {
 			console.error("scrape failed", e);
 			toast.error("Could not fetch article text");
@@ -154,7 +187,7 @@ function App() {
 		}
 	};
 
-	const detect = async () => {
+	const detect = async (): Promise<void> => {
 		setProbability(null);
 		setLoading(true);
 		setLoadingType("detect");
@@ -177,9 +210,11 @@ function App() {
 			});
 
 			if (!res.ok) throw new Error(await res.text());
-			const { probability } = await res.json();
+			const { probability: prob } = (await res.json()) as {
+				probability: number;
+			};
 
-			setProbability(probability);
+			setProbability(prob);
 		} catch (err) {
 			console.error(err);
 			toast.error("Inference failed");
@@ -189,20 +224,19 @@ function App() {
 		}
 	};
 
-	const resetResult = () => {
+	const resetResult = (): void => {
 		setProbability(null);
 		setText("");
 		setUrl("");
 	};
 
-	const verdict =
+	const verdict: Verdict | null =
 		probability === null
 			? null
 			: probability < 0.4
 				? {
 						label: "Likely Fake",
 						sub: "Low credibility signal",
-						tone: "red",
 						ring: "stroke-red-500",
 						text: "text-red-600 dark:text-red-400",
 						bg: "bg-red-50 dark:bg-red-950/40",
@@ -212,7 +246,6 @@ function App() {
 					? {
 							label: "Uncertain",
 							sub: "Mixed credibility signal",
-							tone: "amber",
 							ring: "stroke-amber-400",
 							text: "text-amber-600 dark:text-amber-400",
 							bg: "bg-amber-50 dark:bg-amber-950/40",
@@ -221,15 +254,14 @@ function App() {
 					: {
 							label: "Likely Real",
 							sub: "Strong credibility signal",
-							tone: "emerald",
 							ring: "stroke-emerald-500",
 							text: "text-emerald-600 dark:text-emerald-400",
 							bg: "bg-emerald-50 dark:bg-emerald-950/40",
 							border: "border-emerald-200 dark:border-emerald-900",
 						};
 
-	const ActiveThemeIcon =
-		THEME_OPTIONS.find(t => t.id === theme)?.Icon || Monitor;
+	const ActiveThemeIcon: Icon =
+		THEME_OPTIONS.find(t => t.id === theme)?.Icon ?? Monitor;
 
 	return (
 		<div className="relative min-h-dvh bg-neutral-50 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 overflow-x-hidden">
@@ -281,7 +313,7 @@ function App() {
 			)}
 
 			<div
-				tabIndex="-1"
+				tabIndex={-1}
 				aria-hidden={!isModalOpen}
 				onClick={() => setIsModalOpen(false)}
 				className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${
@@ -337,7 +369,7 @@ function App() {
 								/>
 								<span className="font-medium">LinkedIn</span>
 							</div>
-							<ArrowRightArrow />
+							<ArrowIcon />
 						</a>
 						<a
 							href="https://rishabalagharu.com/"
@@ -351,7 +383,7 @@ function App() {
 								/>
 								<span className="font-medium">Personal Website</span>
 							</div>
-							<ArrowRightArrow />
+							<ArrowIcon />
 						</a>
 						<a
 							href="https://github.com/RishabSA"
@@ -365,7 +397,7 @@ function App() {
 								/>
 								<span className="font-medium">GitHub</span>
 							</div>
-							<ArrowRightArrow />
+							<ArrowIcon />
 						</a>
 					</div>
 				</div>
@@ -666,7 +698,7 @@ function App() {
 												cy="18"
 												r="16"
 												fill="none"
-												className={`${verdict.ring} transition-all duration-700 ease-out`}
+												className={`${verdict!.ring} transition-all duration-700 ease-out`}
 												strokeWidth="2.5"
 												strokeDasharray={`${probability * 100 * 0.75} 100`}
 												strokeLinecap="round"
@@ -674,7 +706,7 @@ function App() {
 										</svg>
 										<div className="absolute top-1/2 start-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
 											<span
-												className={`text-4xl font-bold tabular-nums ${verdict.text}`}>
+												className={`text-4xl font-bold tabular-nums ${verdict!.text}`}>
 												{Math.round(probability * 100)}
 												<span className="text-2xl">%</span>
 											</span>
@@ -685,12 +717,13 @@ function App() {
 									</div>
 
 									<div
-										className={`mt-4 inline-flex flex-col items-center px-4 py-2 rounded-xl border ${verdict.bg} ${verdict.border}`}>
-										<span className={`text-sm font-semibold ${verdict.text}`}>
-											{verdict.label}
+										className={`mt-4 inline-flex flex-col items-center px-4 py-2 rounded-xl border ${verdict!.bg} ${verdict!.border}`}>
+										<span
+											className={`text-sm font-semibold ${verdict!.text}`}>
+											{verdict!.label}
 										</span>
 										<span className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
-											{verdict.sub}
+											{verdict!.sub}
 										</span>
 									</div>
 								</div>
@@ -714,7 +747,7 @@ function App() {
 	);
 }
 
-function ArrowRightArrow() {
+function ArrowIcon(): React.ReactElement {
 	return (
 		<svg
 			width="16"
